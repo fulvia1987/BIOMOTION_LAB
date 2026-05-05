@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🔬 BIOMOTION LAB – Caccia al Tesoro</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#07091a;--card:#111c35;--a:#00d4ff;--gold:#ffc107;
+  --green:#00e676;--red:#ff3d5a;--purple:#b36aff;--orange:#ff7043;
+  --txt:#dde8ff;--muted:#4a6090;--border:rgba(0,212,255,.15);--r:18px;
+}
+html,body{height:100%;overscroll-behavior:none;}
+body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 60%,rgba(0,80,255,.07) 0%,transparent 100%),
+    radial-gradient(ellipse 60% 70% at 90% 10%,rgba(0,212,255,.05) 0%,transparent 100%),
+    radial-gradient(ellipse 40% 40% at 55% 95%,rgba(179,106,255,.05) 0%,transparent 100%);}
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.45;}
+
+/* ── SCREENS ── */
+.screen{display:none;position:relative;z-index:10;min-height:100vh;
+  padding:16px;align-items:center;justify-content:center;flex-direction:column;}
+.screen.on{display:flex;}
+
+/* ── INTRO ── */
+.intro-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:40px 32px;width:100%;max-width:480px;text-align:center;
+  box-shadow:0 0 80px rgba(0,80,255,.1);
+  animation:riseIn .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes riseIn{from{opacity:0;transform:translateY(50px) scale(.95)}to{opacity:1;transform:none}}
+.badge{display:inline-flex;align-items:center;gap:7px;background:rgba(0,212,255,.09);
+  border:1px solid rgba(0,212,255,.22);border-radius:100px;padding:5px 16px;
+  font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--a);margin-bottom:22px;}
+.big-title{font-size:clamp(38px,9vw,64px);font-weight:900;line-height:1;margin-bottom:6px;
+  background:linear-gradient(130deg,#fff 20%,var(--a));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.intro-sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.55;}
+
+/* TAPPA MAP */
+.tappa-map{display:flex;justify-content:center;align-items:center;gap:4px;
+  flex-wrap:wrap;margin:22px 0 28px;}
+.tnode{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:17px;background:rgba(255,255,255,.05);
+  border:1.5px solid rgba(255,255,255,.1);position:relative;}
+.tnode::after{content:'';position:absolute;right:-6px;top:50%;width:8px;
+  height:1.5px;background:rgba(255,255,255,.12);}
+.tnode:last-child::after{display:none;}
+
+.btn-start{background:var(--a);color:var(--bg);border:none;border-radius:100px;
+  padding:16px 48px;font-family:'Exo 2',sans-serif;font-size:17px;font-weight:700;
+  cursor:pointer;transition:all .22s;box-shadow:0 0 28px rgba(0,212,255,.35);}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 0 44px rgba(0,212,255,.55);}
+.btn-start:active{transform:scale(.97);}
+
+/* ── HUD ── */
+.hud{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;
+  width:100%;max-width:660px;}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:100px;
+  padding:5px 13px;font-size:11px;font-weight:600;border:1px solid;}
+.pill.blue{border-color:rgba(0,212,255,.3);color:var(--a);}
+.pill.gold{border-color:rgba(255,193,7,.3);color:var(--gold);}
+.pill.fire{border-color:rgba(255,112,67,.3);color:var(--orange);}
+.pbar{flex:1;min-width:50px;height:5px;background:rgba(255,255,255,.07);
+  border-radius:3px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--a),var(--green));
+  transition:width .5s cubic-bezier(.34,1.56,.64,1);}
+
+/* TIMER RING */
+.tring{position:relative;width:50px;height:50px;flex-shrink:0;}
+.tring svg{transform:rotate(-90deg);}
+.ttrack{fill:none;stroke:rgba(255,255,255,.08);stroke-width:4;}
+.tarc{fill:none;stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:132;stroke-dashoffset:0;transition:stroke-dashoffset .85s linear,stroke .3s;}
+.tnum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace;font-size:15px;font-weight:700;}
+
+/* ── Q CARD ── */
+.qwrap{width:100%;max-width:660px;}
+.qcard{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:26px 22px;
+  animation:slideQ .38s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes slideQ{from{opacity:0;transform:translateX(36px) scale(.97)}to{opacity:1;transform:none}}
+.qtag{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+.qemoji{font-size:48px;display:block;margin-bottom:14px;
+  animation:floaty 3.2s ease-in-out infinite;}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.qtext{font-size:clamp(15px,3.5vw,19px);font-weight:700;line-height:1.42;color:#fff;margin-bottom:14px;}
+.qhint{font-size:12px;color:var(--muted);font-style:italic;
+  border-left:3px solid rgba(0,212,255,.3);padding:7px 12px;
+  background:rgba(0,212,255,.04);border-radius:0 8px 8px 0;margin-bottom:20px;}
+
+/* OPTIONS */
+.opts{display:grid;gap:9px;margin-bottom:16px;}
+.opt{
+  background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.07);
+  border-radius:13px;padding:13px 16px;cursor:pointer;
+  font-size:14px;font-weight:500;color:var(--txt);text-align:left;
+  display:flex;align-items:flex-start;gap:11px;
+  transition:border-color .18s,background .18s,transform .18s;
+}
+.opt .lt{width:27px;height:27px;border-radius:7px;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;background:rgba(255,255,255,.07);
+  font-family:'Space Mono',monospace;font-size:11px;font-weight:700;}
+.opt:hover:not(:disabled){border-color:var(--a);background:rgba(0,212,255,.06);transform:translateY(-2px);}
+.opt:active:not(:disabled){transform:scale(.97);}
+.opt:disabled{cursor:default;}
+.opt.correct{border-color:var(--green)!important;background:rgba(0,230,118,.12)!important;color:var(--green)!important;transform:none!important;
+  animation:correctPop .5s cubic-bezier(.34,1.56,.64,1);}
+.opt.wrong{border-color:var(--red)!important;background:rgba(255,61,90,.09)!important;color:var(--red)!important;opacity:.7;transform:none!important;}
+.opt.reveal{border-color:var(--green)!important;background:rgba(0,230,118,.07)!important;}
+
+@keyframes correctPop{
+  0%{transform:scale(1)}
+  30%{transform:scale(1.04)}
+  60%{transform:scale(.98)}
+  100%{transform:scale(1)}
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-10px)}
+  30%{transform:translateX(10px)}
+  45%{transform:translateX(-8px)}
+  60%{transform:translateX(8px)}
+  75%{transform:translateX(-4px)}
+  90%{transform:translateX(4px)}
+}
+.shake{animation:shake .5s ease;}
+
+/* Full-screen flash overlays */
+.flash-overlay{
+  position:fixed;inset:0;z-index:250;pointer-events:none;
+  opacity:0;transition:opacity .1s;
+}
+.flash-overlay.green{background:rgba(0,230,118,.18);}
+.flash-overlay.red{background:rgba(255,61,90,.22);}
+@keyframes flashGreen{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+@keyframes flashRed{0%{opacity:0}10%{opacity:1}40%{opacity:.8}100%{opacity:0}}
+.flash-overlay.do-green{animation:flashGreen .7s ease forwards;}
+.flash-overlay.do-red{animation:flashRed .6s ease forwards;}
+
+/* Score +pts flying number */
+.pts-fly{
+  position:fixed;font-family:'Space Mono',monospace;font-weight:700;
+  font-size:28px;color:var(--green);pointer-events:none;z-index:260;
+  text-shadow:0 0 20px rgba(0,230,118,.8);
+  animation:ptsFly .9s cubic-bezier(.2,.8,.4,1) forwards;
+}
+@keyframes ptsFly{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-90px) scale(1.3)}
+}
+/* Wrong X stamp */
+.wrong-stamp{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:100px;pointer-events:none;z-index:260;
+  animation:stampIn .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes stampIn{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(3) rotate(-20deg)}
+  40%{opacity:1;transform:translate(-50%,-50%) scale(.9) rotate(5deg)}
+  70%{transform:translate(-50%,-50%) scale(1.05) rotate(-2deg)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1) rotate(0)}
+}
+
+/* FEEDBACK */
+.fb{border-radius:12px;padding:12px 16px;font-size:13px;line-height:1.6;
+  margin-bottom:14px;display:none;animation:fbIn .3s;}
+.fb.on{display:block;}
+.fb.ok{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.25);color:#a5d6a7;}
+.fb.fail{background:rgba(255,61,90,.07);border:1px solid rgba(255,61,90,.2);color:#ef9a9a;}
+@keyframes fbIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.btn-next{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--a);color:var(--bg);border:none;border-radius:0;
+  padding:18px 40px;font-family:'Exo 2',sans-serif;font-size:17px;font-weight:700;
+  cursor:pointer;transition:transform .2s,box-shadow .2s;
+  display:none;box-shadow:0 -4px 30px rgba(0,212,255,.35);
+  z-index:100;letter-spacing:.3px;
+}
+.btn-next:active{transform:scale(.98);}
+/* padding bottom on qcard so content not hidden behind fixed btn */
+#sQuiz{padding-bottom:80px;}
+
+/* STREAK TOAST */
+.streak-toast{
+  display:none;position:fixed;top:18px;left:50%;transform:translateX(-50%);
+  z-index:500;padding:10px 26px;border-radius:100px;
+  background:linear-gradient(135deg,#ff7043,#ffc107);color:#111;
+  font-weight:700;font-size:14px;white-space:nowrap;
+  box-shadow:0 4px 28px rgba(255,112,67,.45);
+  animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-30px) scale(.8)}
+  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+
+/* ── CLUE OVERLAY ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);
+  z-index:300;align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(12px);}
+.overlay.on{display:flex;}
+.clue-card{
+  background:linear-gradient(145deg,#111c35,#07091a);
+  border:2px solid var(--gold);border-radius:24px;
+  padding:38px 28px;max-width:420px;width:100%;text-align:center;
+  box-shadow:0 0 80px rgba(255,193,7,.18);
+  animation:popIn .48s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
+.clue-ico{font-size:64px;display:block;margin-bottom:10px;
+  animation:spinIn .5s .1s both;}
+@keyframes spinIn{from{transform:rotate(-25deg) scale(.4)}to{transform:rotate(0) scale(1)}}
+.clue-pts{font-size:40px;font-weight:900;font-family:'Space Mono',monospace;
+  color:var(--green);margin-bottom:4px;}
+.clue-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:5px;}
+.clue-sub2{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.clue-box{background:rgba(255,193,7,.08);border:1px dashed rgba(255,193,7,.3);
+  border-radius:12px;padding:14px 16px;font-style:italic;font-size:14px;
+  color:var(--gold);margin-bottom:22px;line-height:1.6;}
+.btn-clue{background:var(--gold);color:#111;border:none;border-radius:100px;
+  padding:13px 38px;font-family:'Exo 2',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .22s;}
+.btn-clue:hover{transform:scale(1.04);box-shadow:0 0 28px rgba(255,193,7,.4);}
+
+/* ── FINALE ── */
+.finale-wrap{width:100%;max-width:520px;}
+.finale-card{
+  background:var(--card);border:2px solid var(--gold);border-radius:var(--r);
+  padding:40px 28px;text-align:center;
+  box-shadow:0 0 80px rgba(255,193,7,.14);
+  animation:riseIn .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+.finale-trophy{font-size:72px;display:block;margin-bottom:14px;animation:bounceIn .7s .2s both;}
+@keyframes bounceIn{0%{transform:translateY(-40px) scale(.6);opacity:0}
+  60%{transform:translateY(8px)}80%{transform:translateY(-4px)}
+  100%{transform:none;opacity:1}}
+.finale-title{font-size:34px;font-weight:900;margin-bottom:6px;
+  background:linear-gradient(130deg,var(--gold),#fff 50%,var(--a));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.finale-sub{font-size:13px;color:var(--muted);margin-bottom:26px;}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.sbox{background:rgba(255,255,255,.04);border-radius:12px;padding:16px 8px;}
+.snum{font-size:30px;font-weight:900;font-family:'Space Mono',monospace;}
+.slbl{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:1px;}
+.rating-msg{background:rgba(0,212,255,.05);border:1px solid var(--border);
+  border-radius:12px;padding:16px 18px;font-size:13px;line-height:1.7;
+  color:rgba(221,232,255,.75);margin-bottom:22px;}
+.btn-restart{background:var(--a);color:var(--bg);border:none;border-radius:100px;
+  padding:15px 44px;font-family:'Exo 2',sans-serif;font-size:16px;font-weight:700;
+  cursor:pointer;transition:all .22s;box-shadow:0 0 24px rgba(0,212,255,.3);}
+.btn-restart:hover{transform:translateY(-2px);box-shadow:0 0 38px rgba(0,212,255,.5);}
+
+/* CONFETTI */
+.cp{position:fixed;border-radius:2px;animation:cfall linear forwards;z-index:600;pointer-events:none;}
+@keyframes cfall{0%{transform:translateY(-30px) rotate(0);opacity:1}
+  100%{transform:translateY(110vh) rotate(800deg);opacity:0}}
+
+@media(max-width:440px){
+  .intro-card,.qcard,.finale-card{padding:22px 16px;}
+  .clue-card{padding:28px 18px;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgc"></canvas>
+<div class="flash-overlay green" id="flashGreen"></div>
+<div class="flash-overlay red" id="flashRed"></div>
+
+<!-- ══════ INTRO ══════ -->
+<div class="screen on" id="sIntro">
+  <div class="intro-card">
+    <div class="badge">🔬 ROSATELLI · RIETI · CLASSE 3°</div>
+    <div class="big-title">BIOMOTION<br>LAB</div>
+    <div class="intro-sub">Caccia al Tesoro Scientifica<br>Chimica · Sport · Biotecnologie · Arduino</div>
+
+    <div class="tappa-map" id="tappaMap"></div>
+
+    <p style="font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.6">
+      <strong style="color:var(--txt)">12 domande</strong> · Timer 20 sec · Bonus streak 🔥 · Indizi da sbloccare 🗝️
+    </p>
+    <button class="btn-start" onclick="startQuiz()">▶ &nbsp;Inizia la Caccia!</button>
+  </div>
+</div>
+
+<!-- ══════ QUIZ ══════ -->
+<div class="screen" id="sQuiz">
+  <div class="qwrap">
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="pill blue" id="hudStage">1 / 12</div>
+      <div class="pill gold">⭐ <span id="hudScore">0</span></div>
+      <div class="pill fire" id="hudFire" style="display:none">🔥 <span id="hudStreak">2</span>x</div>
+      <div class="pbar"><div class="pfill" id="pFill" style="width:0%"></div></div>
+      <!-- Timer Ring -->
+      <div class="tring">
+        <svg width="50" height="50" viewBox="0 0 50 50">
+          <circle class="ttrack" cx="25" cy="25" r="21"/>
+          <circle class="tarc" id="tarc" cx="25" cy="25" r="21" stroke="var(--a)"/>
+        </svg>
+        <div class="tnum" id="tnum" style="color:var(--a)">20</div>
+      </div>
+    </div>
+
+    <!-- Question -->
+    <div class="qcard" id="qCard">
+      <div class="qtag" id="qTag">TAPPA 1</div>
+      <span class="qemoji" id="qEmoji">🧪</span>
+      <div class="qtext" id="qText"></div>
+      <div class="qhint" id="qHint"></div>
+      <div class="opts" id="optGrid"></div>
+      <div class="fb" id="fb"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTONE AVANTI – fisso in basso -->
+<button class="btn-next" id="btnNext" onclick="nextQ()">Avanti →</button>
+
+<!-- ══════ CLUE OVERLAY ══════ -->
+<div class="overlay" id="clueOv">
+  <div class="clue-card">
+    <span class="clue-ico" id="clueIco">🏅</span>
+    <div class="clue-pts" id="cluePts">+15</div>
+    <div class="clue-title" id="clueTitle">Tappa superata!</div>
+    <div class="clue-sub2" id="clueSub">Ecco l'indizio per la prossima tappa</div>
+    <div class="clue-box" id="clueText">"..."</div>
+    <button class="btn-clue" onclick="closeClue()">Prossima Tappa 🚀</button>
+  </div>
+</div>
+
+<!-- STREAK TOAST -->
+<div class="streak-toast" id="streakToast">🔥 COMBO!</div>
+
+<!-- ══════ FINALE ══════ -->
+<div class="screen" id="sFinale">
+  <div class="finale-wrap">
+    <div class="finale-card">
+      <span class="finale-trophy" id="fTrophy">🏆</span>
+      <div class="finale-title">Tesoro Trovato!</div>
+      <div class="finale-sub">BIOMOTION LAB · Caccia al Tesoro Completata</div>
+      <div class="stats-grid">
+        <div class="sbox"><div class="snum" id="fScore" style="color:var(--gold)">0</div><div class="slbl">PUNTI</div></div>
+        <div class="sbox"><div class="snum" id="fCorrect" style="color:var(--green)">0/12</div><div class="slbl">ESATTE</div></div>
+        <div class="sbox"><div class="snum" id="fRating" style="color:var(--purple)">–</div><div class="slbl">VOTO</div></div>
+      </div>
+      <div class="rating-msg" id="fMsg"></div>
+      <button class="btn-restart" onclick="restartQuiz()">↩ &nbsp;Ricomincia</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   12 DOMANDE
+══════════════════════════════════════ */
+const Q = [
+  {
+    tag:"TAPPA 1 · POLIMERI NATURALI", emoji:"🌿", pts:15,
+    hint:"Goodyear, 1839: ponti di zolfo tra catene di gomma...",
+    q:"Quale processo chimico trasforma il lattice dell'Hevea brasiliensis in gomma resistente ed elastica, usata nelle suole e nei palloni sportivi?",
+    opts:["Fermentazione lattica","Vulcanizzazione","Idrolisi acida","Cristallizzazione"],
+    c:1,
+    ex:"La vulcanizzazione crea legami covalenti di zolfo tra le catene polimeriche, aumentando resistenza meccanica e stabilità termica della gomma naturale.",
+    clue:{ico:"⚗️",title:"Laboratorio sbloccato!",sub:"Ora testiamo i materiali con le nostre mani!",
+      txt:"\"Il prossimo indizio è nascosto nei campioni sportivi: elasticità, durezza, impermeabilità – quante proprietà nasconde una suola da calcio?\""}
+  },
+  {
+    tag:"TAPPA 2 · POLIMERI SINTETICI", emoji:"🧴", pts:15,
+    hint:"Una muta da surf ti tiene caldo a 15°C: come mai?",
+    q:"Il neoprene (policloroprene) è il materiale delle mute da nuoto e surf perché possiede:",
+    opts:["Alta conducibilità elettrica e rigidità elevata",
+      "Isolamento termico, galleggiamento e resistenza all'acqua salata e al cloro",
+      "Proprietà magnetiche e trasparenza all'UV",
+      "Alta durezza e fragilità meccanica"],
+    c:1,
+    ex:"Le celle chiuse di gas nel neoprene intrappolano aria, isolando termicamente e riducendo la densità (buoyancy). Resiste alla degradazione da cloro e salsedine.",
+    clue:{ico:"🏃",title:"Palestra sbloccata!",sub:"Dal laboratorio alla pista!",
+      txt:"\"Il prossimo indizio è nel tuo corpo in movimento: velocità, salto, resistenza aerobica. Il laboratorio sei TU.\""}
+  },
+  {
+    tag:"TAPPA 3 · LABORATORIO", emoji:"⚗️", pts:15,
+    hint:"Stiriamo il materiale e misuriamo quanto 'tira' per tornare alla forma originale...",
+    q:"Per misurare l'ELASTICITÀ di un campione di suola sportiva nel laboratorio BIOMOTION si usa principalmente:",
+    opts:["Un pH-metro digitale","Un termometro a infrarossi",
+      "Un dinamometro (misura forza di ritorno dopo deformazione)","Un colorimetro UV-Vis"],
+    c:2,
+    ex:"L'elasticità si misura applicando una forza nota e rilevando con il dinamometro la forza elastica di richiamo proporzionale alla deformazione subita.",
+    clue:{ico:"💓",title:"Test Motori sbloccati!",sub:"La palestra ti aspetta!",
+      txt:"\"Corri, salta, resisti: il prossimo indizio è nella tua frequenza cardiaca dopo 30 secondi di sprint.\""}
+  },
+  {
+    tag:"TAPPA 4 · SCIENZE MOTORIE", emoji:"🏃", pts:15,
+    hint:"12 minuti di corsa: più distanza percorri, migliore è il tuo VO₂max...",
+    q:"Il test di Cooper misura la capacità aerobica. In cosa consiste esattamente?",
+    opts:["Correre 100 m nel minor tempo possibile",
+      "Saltare il più in lungo possibile da fermo",
+      "Correre per 12 minuti e misurare la distanza percorsa",
+      "Pedalare su cicloergometro per 10 minuti a potenza costante"],
+    c:2,
+    ex:"Il test Cooper (Kenneth Cooper, 1968) stima il VO₂max: correre più lontano in 12' indica maggiore efficienza del sistema cardiorespiratorio.",
+    clue:{ico:"💓",title:"Parametri Fisici!",sub:"Il corpo come strumento di misura!",
+      txt:"\"Il prossimo indizio è nel battito: cosa succede al cuore immediatamente dopo uno sprint? Conta i battiti per 15 secondi e moltiplica per 4.\""}
+  },
+  {
+    tag:"TAPPA 5 · FISIOLOGIA", emoji:"💓", pts:15,
+    hint:"Metti la mano sul petto subito dopo lo sprint: cosa senti?",
+    q:"Immediatamente dopo un esercizio fisico intenso (sprint 30 m), cosa succede alla frequenza cardiaca?",
+    opts:["Diminuisce sotto i valori a riposo per compensare",
+      "Rimane identica perché il cuore è abituato all'esercizio",
+      "Aumenta significativamente: i muscoli richiedono più O₂ e smaltimento di CO₂",
+      "Diventa irregolare e poi si ferma brevemente"],
+    c:2,
+    ex:"Durante l'esercizio intenso i muscoli consumano O₂ e producono CO₂ e acido lattico. Il sistema nervoso autonomo accelera il cuore (fino a 200 bpm) per aumentare la portata cardiaca.",
+    clue:{ico:"🥗",title:"Nutrizione sbloccata!",sub:"Carburante per campioni!",
+      txt:"\"Il prossimo segreto è nell'etichetta alimentare: un atleta legge i macronutrienti a colpo d'occhio. Sai farlo anche tu?\""}
+  },
+  {
+    tag:"TAPPA 6 · NUTRIZIONE SPORTIVA", emoji:"🥗", pts:15,
+    hint:"Il glicogeno muscolare è il 'carburante di pronto uso' del corridore...",
+    q:"Quale macronutriente rappresenta la fonte energetica più RAPIDA durante uno sforzo fisico ad alta intensità?",
+    opts:["Lipidi (grassi)","Proteine","Vitamine e minerali",
+      "Carboidrati (glicogeno muscolare → glucosio → ATP)"],
+    c:3,
+    ex:"I carboidrati vengono stoccati come glicogeno. Durante sforzi intensi, la glicolisi converte glicogeno→glucosio→ATP molto più rapidamente della beta-ossidazione dei lipidi.",
+    clue:{ico:"🧬",title:"Biotecnologie sbloccate!",sub:"La biologia del muscolo!",
+      txt:"\"Il prossimo indizio: perché dopo l'allenamento si beve uno shake proteico? I muscoli hanno appena subito un trauma microscopico...\""}
+  },
+  {
+    tag:"TAPPA 7 · BIOTECNOLOGIE", emoji:"🧬", pts:15,
+    hint:"Dopo l'allenamento con i pesi, perché si beve uno shake proteico?",
+    q:"La funzione principale delle PROTEINE nell'alimentazione dell'atleta è:",
+    opts:["Fornire energia immediata durante lo sforzo fisico",
+      "Riparare e costruire il tessuto muscolare (sintesi proteica post-allenamento)",
+      "Regolare la temperatura corporea come fanno i lipidi",
+      "Immagazzinare vitamina D nel fegato"],
+    c:1,
+    ex:"L'esercizio danneggia le miofibrille muscolari. Le proteine (amminoacidi essenziali) sono i 'mattoni' per la sintesi proteica muscolare nella fase di recupero.",
+    clue:{ico:"🤖",title:"Arduino sbloccato!",sub:"La tecnologia entra in palestra!",
+      txt:"\"Il prossimo indizio è nel pin 3 dell'Arduino: temperatura corporea in tempo reale prima e dopo lo sprint. La scienza misura il corpo.\""}
+  },
+  {
+    tag:"TAPPA 8 · ARDUINO & SENSORI", emoji:"🤖", pts:15,
+    hint:"Solo il 25% dell'energia chimica diventa lavoro meccanico nel muscolo...",
+    q:"Il sensore Arduino rileva un AUMENTO di temperatura corporea dopo lo sprint. Questo accade perché:",
+    opts:["I muscoli assorbono calore dall'ambiente esterno durante la corsa",
+      "La contrazione muscolare converte ATP in energia meccanica + calore (≈75% disperso come calore)",
+      "Il sensore è difettoso e misura la temperatura dell'aria circostante",
+      "Il corpo abbassa la temperatura muscolare per proteggere le proteine enzimi"],
+    c:1,
+    ex:"L'efficienza meccanica del muscolo è ~25%. Il restante 75% dell'energia da ATP viene dissipata come calore, registrabile dall'Arduino come variazione di tensione del sensore.",
+    clue:{ico:"🇬🇧",title:"Glossario Inglese!",sub:"Speak science globally!",
+      txt:"\"L'indizio si nasconde nelle parole tecniche: 'buoyancy', 'elasticity', 'composite material' – sai riconoscerle in una scheda tecnica inglese?\""}
+  },
+  {
+    tag:"TAPPA 9 · INGLESE TECNICO", emoji:"🇬🇧", pts:15,
+    hint:"'Buoyancy' deriva da 'buoy' (boa) – cosa fa una boa in acqua?",
+    q:"Nella scheda tecnica di una muta da nuoto in inglese, il termine 'buoyancy' indica:",
+    opts:["La resistenza alla lacerazione superficiale del neoprene",
+      "La capacità di trasmissione del calore attraverso il materiale",
+      "La spinta di galleggiamento (spinta idrostatica) del materiale",
+      "La permeabilità all'acqua in immersione profonda"],
+    c:2,
+    ex:"Buoyancy = galleggiamento / spinta di Archimede. Il neoprene con celle chiuse ha alta buoyancy: la bassa densità aiuta il nuotatore a stare in superficie riducendo lo sforzo.",
+    clue:{ico:"🏎️",title:"Materiali Compositi!",sub:"La sfida avanzata ti aspetta!",
+      txt:"\"Penultimo indizio: fibra di carbonio + resina epossidica = un solo materiale con proprietà di entrambi. Come si chiama questa categoria?\""}
+  },
+  {
+    tag:"TAPPA 10 · MATERIALI COMPOSITI", emoji:"🏎️", pts:20,
+    hint:"Un composito unisce sempre almeno due materiali con proprietà diverse...",
+    q:"La fibra di carbonio è un 'materiale composito' perché:",
+    opts:["È un elemento puro della tavola periodica (C, numero atomico 6)",
+      "È identica alla grafite delle matite, solo compressa ad alta pressione",
+      "Combina fibre di carbonio ad alta resistenza in una matrice di resina epossidica, unendo proprietà di entrambi i materiali",
+      "È prodotta esclusivamente da processi biologici naturali"],
+    c:2,
+    ex:"I compositi sfruttano sinergie: le fibre di carbonio danno resistenza estrema, la resina distribuisce i carichi. Risultato: leggerissimo e durissimo – come un casco da ciclismo.",
+    clue:{ico:"💪",title:"Biomeccanica sbloccata!",sub:"Come si muove il corpo?",
+      txt:"\"Terzultima domanda sulla fisica del corpo: il bicipite brachiale è una leva. Ma di che tipo? E che vantaggio meccanico offre?\""}
+  },
+  {
+    tag:"TAPPA 11 · BIOMECCANICA", emoji:"💪", pts:20,
+    hint:"Nelle leve di 3° genere la forza è applicata TRA fulcro e resistenza...",
+    q:"Il bicipite brachiale è un esempio di leva di 3° genere perché:",
+    opts:["Il fulcro (gomito) è tra la resistenza (mano) e la forza (bicipite): vantaggio di forza",
+      "La forza muscolare (bicipite) è applicata TRA fulcro (gomito) e resistenza (mano): si guadagna velocità, non forza",
+      "La resistenza (mano) è tra fulcro e forza muscolare: vantaggio di forza massimo",
+      "Il bicipite non è una leva: è un motore lineare a contrazione"],
+    c:1,
+    ex:"Leva 3° genere: F-fulcro-R. Il bicipite applica forza vicino al gomito (fulcro), la mano è lontana. Si ottiene ampio range di movimento e velocità, sacrificando forza meccanica.",
+    clue:{ico:"🔬",title:"Sfida Finale!",sub:"Ultima porta del tesoro!",
+      txt:"\"L'ultima domanda integra tutto il percorso BIOMOTION: chimica, fisica, biologia, tecnologia. Sei pronto per il tesoro?\""}
+  },
+  {
+    tag:"🏆 SFIDA FINALE · TUTTO L'UDA", emoji:"🏆", pts:30,
+    hint:"Ricorda tutte le 10 fasi dell'UDA: dal materiale al corpo, dalla chimica alla tecnologia...",
+    q:"SFIDA FINALE: Quale SEQUENZA corretta descrive il percorso interdisciplinare BIOMOTION dalla chimica alla prestazione sportiva?",
+    opts:[
+      "Scegli il cibo → compra la scarpa → corri → misura la temperatura → studia i polimeri",
+      "Analizza i polimeri della scarpa → testa l'elasticità in laboratorio → misura la prestazione in palestra → monitora la temperatura con Arduino → analizza la dieta dell'atleta",
+      "Usa Arduino → mangia carboidrati → vulcanizza la gomma → corri 12 minuti",
+      "Impara il glossario inglese → costruisci la muta → nuota → misura il pH"
+    ],
+    c:1,
+    ex:"Il percorso BIOMOTION è interdisciplinare: Chimica (polimeri) → Laboratorio (test materiali) → Scienze Motorie (prestazione) → Tecnologia (sensori Arduino) → Biotecnologie (nutrizione). La scienza integrata è il vero tesoro!",
+    clue:{ico:"🏆",title:"TESORO TROVATO!",sub:"Sei un esperto BIOMOTION LAB!",
+      txt:"\"Il vero tesoro è la conoscenza scientifica integrata: chimica, fisica, biologia e tecnologia al servizio dello sport. Sei pronto per la presentazione finale!\""}
+  }
+];
+
+/* ══════════════════════════════════════
+   STATO
+══════════════════════════════════════ */
+let qi=0, score=0, correct=0, streak=0, answered=false;
+let timerVal=20, timerInt=null;
+
+/* ══════════════════════════════════════
+   CANVAS BG
+══════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('bgc'),ctx=c.getContext('2d');
+  let W,H,ps=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  resize(); addEventListener('resize',resize);
+  for(let i=0;i<55;i++) ps.push({x:Math.random()*9999,y:Math.random()*9999,
+    vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:Math.random()*1.4+.4,a:Math.random()});
+  (function draw(){
+    ctx.clearRect(0,0,W,H);
+    ps.forEach(p=>{
+      p.x=(p.x+p.vx+W)%W; p.y=(p.y+p.vy+H)%H;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,212,255,${p.a*.35})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  })();
+})();
+
+/* ══════════════════════════════════════
+   TAPPA MAP (intro)
+══════════════════════════════════════ */
+(function buildMap(){
+  const icons=['🌿','🧴','⚗️','🏃','💓','🥗','🧬','🤖','🇬🇧','🏎️','💪','🏆'];
+  document.getElementById('tappaMap').innerHTML =
+    icons.map(ic=>`<div class="tnode">${ic}</div>`).join('');
+})();
+
+/* ══════════════════════════════════════
+   SCREEN SWITCH
+══════════════════════════════════════ */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0,0);
+}
+
+/* ══════════════════════════════════════
+   QUIZ ENGINE
+══════════════════════════════════════ */
+function startQuiz(){
+  resumeAC();
+  qi=0; score=0; correct=0; streak=0;
+  show('sQuiz'); renderQ();
+}
+
+function renderQ(){
+  answered=false;
+  clearInterval(timerInt);
+  const q=Q[qi];
+
+  // Reanimate card
+  const card=document.getElementById('qCard');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='';
+
+  // HUD
+  document.getElementById('hudStage').textContent=`${qi+1} / ${Q.length}`;
+  document.getElementById('hudScore').textContent=score;
+  document.getElementById('pFill').style.width=`${(qi/Q.length)*100}%`;
+  const fEl=document.getElementById('hudFire');
+  if(streak>=2){fEl.style.display='';document.getElementById('hudStreak').textContent=streak;}
+  else fEl.style.display='none';
+
+  // Question
+  document.getElementById('qTag').textContent=q.tag;
+  document.getElementById('qEmoji').textContent=q.emoji;
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('qHint').textContent='💡 '+q.hint;
+
+  // Options
+  const letters=['A','B','C','D'];
+  document.getElementById('optGrid').innerHTML=q.opts.map((o,i)=>`
+    <button class="opt" id="o${i}" onclick="answer(${i})">
+      <span class="lt">${letters[i]}</span><span>${o}</span>
+    </button>`).join('');
+
+  document.getElementById('fb').className='fb';
+  document.getElementById('fb').innerHTML='';
+  document.getElementById('btnNext').style.display='none';
+
+  // Timer
+  timerVal=20; renderTimer(20);
+  timerInt=setInterval(()=>{
+    timerVal--; renderTimer(timerVal);
+    if(timerVal<=0){clearInterval(timerInt);timeOut();}
+  },1000);
+}
+
+function renderTimer(v){
+  const circ=2*Math.PI*21; // r=21
+  document.getElementById('tarc').style.strokeDashoffset=circ*(1-v/20);
+  document.getElementById('tnum').textContent=v>0?v:'⏱';
+  const col=v>10?'var(--a)':v>5?'var(--gold)':'var(--red)';
+  document.getElementById('tarc').style.stroke=col;
+  document.getElementById('tnum').style.color=col;
+}
+
+function timeOut(){
+  if(answered)return;
+  answered=true; streak=0;
+  const q=Q[qi];
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  document.getElementById('o'+q.c).classList.add('reveal');
+  showFb(false,'⏰ <strong>Tempo scaduto!</strong> Risposta corretta: <strong>'+
+    ['A','B','C','D'][q.c]+'</strong>. '+q.ex);
+  setTimeout(showBtn, 800);
+}
+
+function answer(idx){
+  if(answered)return;
+  answered=true;
+  clearInterval(timerInt);
+  const q=Q[qi];
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  document.getElementById('o'+q.c).classList.add('reveal');
+
+  if(idx===q.c){
+    document.getElementById('o'+idx).classList.add('correct');
+    streak++; correct++;
+    let earned=q.pts;
+    if(streak>=3)earned+=10; else if(streak>=2)earned+=5;
+    if(timerVal>=15)earned+=5; else if(timerVal>=10)earned+=2;
+    score+=earned;
+    document.getElementById('hudScore').textContent=score;
+
+    // Green flash
+    triggerFlash('green');
+    playCorrect();
+    // Flying +pts
+    spawnPtsFly('+'+earned+' pt');
+    // Mini confetti burst
+    confetti(18);
+
+    if(streak>=2) showStreakToast(streak);
+    showFb(true,`✅ <strong>Corretto!</strong> +${earned} pt${streak>=2?' 🔥 Combo x'+streak:''}! &nbsp;${q.ex}`);
+    setTimeout(()=>showClue(q.clue,earned),900);
+
+  } else {
+    document.getElementById('o'+idx).classList.add('wrong');
+    streak=0;
+
+    // Red flash + shake card + wrong stamp
+    triggerFlash('red');
+    playWrong();
+    spawnWrongStamp();
+    document.getElementById('qCard').classList.add('shake');
+    setTimeout(()=>document.getElementById('qCard').classList.remove('shake'),520);
+
+    showFb(false,`❌ <strong>Non corretto.</strong> La risposta giusta era <strong>${['A','B','C','D'][q.c]}</strong>. ${q.ex}`);
+    setTimeout(showBtn, 900);
+  }
+}
+
+/* ── AUDIO ── */
+const AC = new (window.AudioContext||window.webkitAudioContext)();
+function resumeAC(){ if(AC.state==='suspended') AC.resume(); }
+
+function playCorrect(){
+  [[523,0],[659,.12],[784,.24],[1047,.38]].forEach(([f,t])=>{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type='sine'; o.frequency.value=f;
+    const s=AC.currentTime+t;
+    g.gain.setValueAtTime(0,s);
+    g.gain.linearRampToValueAtTime(.22,s+.04);
+    g.gain.exponentialRampToValueAtTime(.001,s+.35);
+    o.start(s); o.stop(s+.36);
+  });
+}
+
+function playWrong(){
+  [[220,0,.18],[180,.2,.3]].forEach(([f,t,dur])=>{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type='sawtooth'; o.frequency.value=f;
+    o.frequency.linearRampToValueAtTime(f*.7, AC.currentTime+t+dur);
+    const s=AC.currentTime+t;
+    g.gain.setValueAtTime(0,s);
+    g.gain.linearRampToValueAtTime(.18,s+.03);
+    g.gain.exponentialRampToValueAtTime(.001,s+dur);
+    o.start(s); o.stop(s+dur+.01);
+  });
+}
+
+function triggerFlash(color){
+  const el=document.getElementById('flash'+color.charAt(0).toUpperCase()+color.slice(1));
+  el.className='flash-overlay '+color;
+  void el.offsetWidth;
+  el.className='flash-overlay '+color+' do-'+color;
+}
+
+function spawnPtsFly(text){
+  const el=document.createElement('div');
+  el.className='pts-fly';
+  el.textContent=text;
+  // Position near score pill
+  el.style.top='80px';
+  el.style.left='50%';
+  el.style.transform='translateX(-50%)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function spawnWrongStamp(){
+  const el=document.createElement('div');
+  el.className='wrong-stamp';
+  el.textContent='❌';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),600);
+}
+
+function showFb(ok,html){
+  const el=document.getElementById('fb');
+  el.className='fb '+(ok?'ok':'fail')+' on';
+  el.innerHTML=html;
+}
+
+function showBtn(){
+  const btn=document.getElementById('btnNext');
+  btn.style.display='block';
+  btn.textContent=qi<Q.length-1?'Avanti → tappa successiva':'Vedi risultati 🏆';
+}
+
+function showStreakToast(n){
+  const t=document.getElementById('streakToast');
+  t.textContent=`🔥 COMBO x${n}${n>=5?' – LEGGENDARIO!':n>=3?' – FANTASTICO!':' – Ottimo!'}`;
+  t.style.display='block';
+  t.style.animation='none'; void t.offsetWidth; t.style.animation='';
+  setTimeout(()=>t.style.display='none',2100);
+}
+
+/* ══════════════════════════════════════
+   CLUE OVERLAY
+══════════════════════════════════════ */
+function showClue(cl,pts){
+  document.getElementById('clueIco').textContent=cl.ico;
+  document.getElementById('cluePts').textContent='+'+pts+' pt';
+  document.getElementById('clueTitle').textContent=cl.title;
+  document.getElementById('clueSub').textContent=cl.sub;
+  document.getElementById('clueText').textContent=cl.txt;
+  document.getElementById('clueOv').classList.add('on');
+}
+
+function closeClue(){
+  document.getElementById('clueOv').classList.remove('on');
+  showBtn();
+}
+
+function nextQ(){
+  qi++;
+  if(qi>=Q.length) showFinale();
+  else renderQ();
+}
+
+/* ══════════════════════════════════════
+   FINALE
+══════════════════════════════════════ */
+function showFinale(){
+  const pct=correct/Q.length;
+  let trophy,rating,msg;
+  if(pct>=0.92){trophy='🥇';rating='10';msg='<strong>Eccellenza BIOMOTION!</strong> Padronanza straordinaria di chimica, fisiologia e tecnologia. Presentazione finale con il massimo dei voti!';}
+  else if(pct>=0.75){trophy='🥈';rating='8';msg='<strong>Ottimo scienziato!</strong> Conosci bene polimeri, test fisici e nutrizione. Ripassare materiali compositi e Arduino ti porta all\'eccellenza.';}
+  else if(pct>=0.58){trophy='🥉';rating='6-7';msg='<strong>Buon inizio!</strong> Le basi ci sono, ma alcune tappe meritano un ripasso. Rileggi le schede guidate e riprova!';}
+  else{trophy='📚';rating='<6';msg='<strong>Momento di studiare!</strong> Torna sulle schede di laboratorio, il capitolo sui polimeri e il glossario bilingue. Il BIOMOTION ti aspetta!';}
+
+  document.getElementById('fTrophy').textContent=trophy;
+  document.getElementById('fScore').textContent=score;
+  document.getElementById('fCorrect').textContent=correct+'/'+Q.length;
+  document.getElementById('fRating').textContent=rating;
+  document.getElementById('fMsg').innerHTML=msg;
+  show('sFinale');
+  if(pct>=0.58) confetti(pct>=0.92?90:50);
+}
+
+function restartQuiz(){ show('sIntro'); }
+
+/* ══════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════ */
+function confetti(n){
+  const cols=['#00d4ff','#ffc107','#00e676','#ff3d5a','#b36aff','#ff7043','#ffffff'];
+  for(let i=0;i<n;i++) setTimeout(()=>{
+    const p=document.createElement('div');
+    p.className='cp';
+    const s=7+Math.random()*9;
+    p.style.cssText=`left:${Math.random()*100}vw;background:${cols[~~(Math.random()*cols.length)]};`+
+      `width:${s}px;height:${s}px;border-radius:${Math.random()>.5?'50%':'2px'};`+
+      `animation-duration:${2+Math.random()*2.5}s;animation-delay:${Math.random()*.5}s;`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),5000);
+  },i*30);
+}
+</script>
+</body>
+</html>
